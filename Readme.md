@@ -1,35 +1,6 @@
-Agente Simões 🥸
-The clumsy agent.
-                    ........                   
-            .........oooooo........            
-       ............ooo....oxo............
-    ...............ooo....oxo...............
-  .....................oo....................
-   .........................................
-       .....oooooooooooooooooooooooo....
-       oooooo......................ooooo.
-          .o........................o.         
-       .oxo...oooxxxxxxxxxxxxxoooo..ooxo
-     ooo..........x@@@@@@@@@x..........ooo
-    oo.....      .o@@@@@@@@@x...  .......ox.
-  .xxo...oxooooo...x@@@@@@@xo..ooxxooo...oxx.
-  xxo.o@@xx@@xxxxo..oxxooxx..o@@@x@@xxxoo..xx. 
- oo...x@@@@x@@xxxxo.........ox@@@@xx@@xxx...oo.
- .....xx@@@@@x@@xxx..oxxxo..oxx@@@@@x@@xxo.... 
-.xoo..oxxx@@@@@x@@o..xxxxxo..xxxx@@@@@x@@...oxo
-.xxxo..oxxxx@@@@xo..xxxxxxx...oxxxx@@@@x..oxxxo
-.xxxxxo...oooooo..oxxxxxxxxxo...oooooo...oxxxx.
- oxxxxxxoooooooox@xxxxxxxxxxxxxooooooooxxxxxxx 
- .xxxxxxx@@xx@@@@xxxxxxxxxxxxx@@@@@x@@@xxxxxxo 
-  oxxxxxxxx.ooxoo.ooxxxxxxxooo.oxxo.x@xxxxxxx
-   oxxxxxxxo......  .oxxxo.   .....oxxxxxxxo
-    .xxxxxxxo......................oxxxxxxo
-      oxxxxxxxooo.....oxoo....ooooxxxxxxo
-        .xxxxxxxxxxxxxxxxxxxxxxxxxxxxx.        
-            xxxxxxxxxxxxxxxxxxxxxxx.           
-                 oxxxxxxxxxxxo.
+# Agente Simões - The clumsy AI agent.
 
-            Agente Simões     
+<img src="agent-simoes.png" alt="Original">
 
 ## This is a simple, limit and clumsy agent.
 
@@ -90,7 +61,7 @@ The agent expects llama-server to be running independently:
 ### Qwen 2.5 7B
 
 ```bash
-llama-server --model /home/$USER/gguf_models/coding/qwen2.5-7b-coder.gguf \
+llama-server --model qwen2.5-7b-coder.gguf \
   --alias "Qwen 2.5" \
   --threads 8 \
   --ctx-size 32768 \
@@ -104,7 +75,7 @@ llama-server --model /home/$USER/gguf_models/coding/qwen2.5-7b-coder.gguf \
 ### Qwen 3.5 9B
 
 ```bash
-llama-server --model /home/$USER/gguf_models/coding/Qwen3.5-9B-UD-Q4_K_XL.gguf \
+llama-server --model qwen3.5-9B-UD-Q4_K_XL.gguf \
   --alias "Qwen 3.5" \
   --threads 8 \
   --port 8001 \
@@ -117,5 +88,5 @@ llama-server --model /home/$USER/gguf_models/coding/Qwen3.5-9B-UD-Q4_K_XL.gguf \
   --ctx-size 32768 \
   --presence_penalty 1.5 \
   --flash-attn on \
-  --chat-template-file /home/$USER/gguf_models/coding/qwen3.5_chat_template.jinja
+  --chat-template-file qwen3.5_chat_template.jinja
 ```
