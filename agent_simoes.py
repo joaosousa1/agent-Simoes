@@ -8,6 +8,8 @@ import shutil
 import subprocess
 import difflib
 
+ROOT_CONTEXT = os.getcwd()
+
 # ANSI color codes
 class Colors:
     HEADER    = '\033[95m'
@@ -24,14 +26,14 @@ class Colors:
 
 # Run llama server before running this script.
 # Example:
-# llama-server --model /home/$USER/gguf_models/coding/qwen2.5-coder-14b-instruct-q8_0.gguf --alias "Qwen" --threads 8 --ctx-size 32768 --port 8001 --n-gpu-layers 30 --temp 0.0 --top-k 1 --jinja
+# llama-server --model qwen2.5-coder-7b-instruct.gguf --alias "Qwen" --threads 8 --ctx-size 32768 --port 8001 --n-gpu-layers 30 --temp 0.7 --top-k 50 --top-p 1 -ngl 10 --jinja
 
 # --- SETTINGS ---
 DEFAULT_MODEL_NAME = "Qwen-7B-Coder"
 BASE_URL = "http://127.0.0.1:8001/v1"
 MAX_CHARS = 60000  # Safety limit for context size
 
-# --- READLINE HISTORY (melhorado) ---
+# --- READLINE HISTORY ---
 try:
     import readline
 except ImportError:
@@ -40,7 +42,7 @@ except ImportError:
 histfile = os.path.join(os.path.expanduser("~"), ".agent_simoes_history")
 
 if readline is not None:
-    readline.set_history_length(2000)  # aumentar capacidade do histórico
+    readline.set_history_length(2000)
     try:
         readline.read_history_file(histfile)
     except FileNotFoundError:
@@ -103,7 +105,8 @@ class Spinner:
 def list_files():
     """Returns a formatted string of the current directory contents."""
     try:
-        items = os.listdir(".")
+        #items = os.listdir(".")
+        items = os.listdir(ROOT_CONTEXT)
         if not items:
             return "Empty"
         return "\n".join([f" - {'[DIR]' if os.path.isdir(i) else '[FILE]'} {i}" for i in items])
@@ -152,13 +155,22 @@ def parse_and_execute(ai_text):
 
     # MKDIR ────────────────────────────────────────────────
     for folder in mkdir_matches:
-        folder = folder.strip().strip("'\"[]")
+        
+        #folder = folder.strip().strip("'\"[]")
+        target_path = os.path.normpath(os.path.join(ROOT_CONTEXT, folder))
+
+        # Security: Prevents the model from using '../' to escape the project folder.
+        if not target_path.startswith(ROOT_CONTEXT):
+            print(f"{Colors.FAIL}Security Block: Directory '{folder}' is outside current context!{Colors.ENDC}")
+            continue
+
         if folder:
             print(f"{Colors.WARNING}\n→ Create directory '{folder}'?{Colors.ENDC} (y/n): ", end="")
             confirm = input().lower().strip()
             if confirm in ('y', 'yes'):
                 try:
-                    os.makedirs(folder, exist_ok=True)
+                    #os.makedirs(folder, exist_ok=True)
+                    os.makedirs(target_path, exist_ok=True)
                     print(f"{Colors.OKGREEN}Created directory: {folder}{Colors.ENDC}")
                     action_taken = True
                 except Exception as e:
@@ -167,15 +179,24 @@ def parse_and_execute(ai_text):
     # DELETE_DIR ───────────────────────────────────────────
     for target in delete_dir_matches:
         target = target.strip().strip("'\"[]")
-        if os.path.exists(target):
+
+        # Normalize and anchor to ROOT_CONTEXT
+        target_path = os.path.normpath(os.path.join(ROOT_CONTEXT, target))
+
+        # Security: Prevents the model from using '../' to escape the project folder.
+        if not target_path.startswith(ROOT_CONTEXT):
+            print(f"{Colors.FAIL}Security Block: Path '{target}' is outside current context!{Colors.ENDC}")
+            continue
+
+        if os.path.exists(target_path):
             print(f"{Colors.FAIL}\n→ DELETE '{target}'?{Colors.ENDC} (y/n): ", end="")
             confirm = input().lower().strip()
             if confirm in ('y', 'yes'):
                 try:
-                    if os.path.isdir(target):
-                        shutil.rmtree(target)
+                    if os.path.isdir(target_path):
+                        shutil.rmtree(target_path)
                     else:
-                        os.remove(target)
+                        os.remove(target_path)
                     print(f"{Colors.OKGREEN}Removed: {target}{Colors.ENDC}")
                     action_taken = True
                 except Exception as e:
@@ -185,28 +206,32 @@ def parse_and_execute(ai_text):
 
     # FILE creation via [FILE: path] tag (empty file) ──────
     for path in file_matches:
-        path = os.path.normpath(path.strip().strip("'\"[]"))
+        #path = os.path.normpath(path.strip().strip("'\"[]"))
+        path = path.strip().strip("'\"[]")
+        target_path = os.path.normpath(os.path.join(ROOT_CONTEXT, path))
+
         if path and path not in ('.', '..', '/'):
             print(f"\n{Colors.OKBLUE}AI proposes to create file: {Colors.BOLD}{path}{Colors.ENDC}")
             confirm = input(f"{Colors.WARNING}Create this file? (y/n): {Colors.ENDC}").lower().strip()
             if confirm in ('y', 'yes'):
-                dir_path = os.path.dirname(path)
-                if dir_path and dir_path != '.':
+                dir_path = os.path.dirname(target_path)
+                if dir_path and dir_path != ROOT_CONTEXT:
                     try:
                         os.makedirs(dir_path, exist_ok=True)
                     except Exception as e:
                         print(f"{Colors.FAIL}Error creating directory: {e}{Colors.ENDC}")
                         continue
                 try:
-                    open(path, 'w').close()  # create empty file
+                    open(target_path, 'w').close()  # create empty file
                     print(f"{Colors.OKGREEN}Created empty file: {path}{Colors.ENDC}")
                     action_taken = True
                 except Exception as e:
                     print(f"{Colors.FAIL}Error creating file: {e}{Colors.ENDC}")
 
+
     # DELETE_FILE ──────────────────────────────────────────
     for target in delete_file_matches:
-        target = os.path.normpath(target.strip().strip("'\"[]"))
+        target = os.path.normpath(os.path.join(ROOT_CONTEXT, target.strip().strip("'\"[]")))
         if os.path.exists(target):
             if os.path.isdir(target):
                 print(f"{Colors.WARNING}{target} is a directory. Use [DELETE_DIR] instead.{Colors.ENDC}")
@@ -231,7 +256,7 @@ def parse_and_execute(ai_text):
         diffs_shown = False
 
         for i, (path, new_content) in enumerate(files_to_create, 1):
-            path = os.path.normpath(path)
+            path = os.path.normpath(os.path.join(ROOT_CONTEXT,path))
             if os.path.exists(path) and os.path.isfile(path):
                 try:
                     with open(path, "r", encoding="utf-8") as f:
@@ -363,7 +388,7 @@ def start_msg():
             xxxxxxxxxxxxxxxxxxxxxxx.           
                  oxxxxxxxxxxxo.
 
-            Agente Simões                   
+                 Agente Simões                   
 """
     print(f'{Colors.YELLOW_BRIGHT}{msg}')
 
@@ -408,6 +433,15 @@ session = [
             "• Create folder:  [MKDIR: relative/path]\n"
             "• Delete folder:  [DELETE_DIR: relative/path]\n"
             "• Delete file:    [DELETE_FILE: relative/path]\n\n"
+
+            "When proposing to creating folder:\n"
+            "• ALWAYS use the format above: [MKDIR: path]"
+
+            "When proposing to delete folder:\n"
+            "• ALWAYS use the format above: [DELET_DIR: path]"
+
+            "When proposing to delete file:\n"
+            "• ALWAYS use the format above: [DELETE_FILE: path]"
 
             "Answer concisely and technically.\n\n"
         )
@@ -463,9 +497,10 @@ def count_tokens_via_api(messages, base_url=BASE_URL):
 try:
     while True:
         try:
+            parse = True
             tokens = count_tokens_via_api(session)
             if tokens is not None:
-                print("\n\n")
+                print("")
                 print(f"Tokens: {tokens}")
                 print("")
 
@@ -538,42 +573,46 @@ try:
                 subprocess.run(cmd, shell=True)
                 continue
 
-            if not user_input:
-                continue
-
             if user_input.startswith("/read "):
+                parse = False # dont parse llm response in read files
                 fname = user_input[6:].strip()
-                if os.path.exists(fname):
+                if os.path.exists(os.path.join(ROOT_CONTEXT,fname)):
                     with open(fname, "r", encoding="utf-8") as f:
                         content = f.read()
                     if len(content) > MAX_CHARS:
-                        print(f"{Colors.FAIL}⚠️ File content exceeds safety limit.{Colors.ENDC}")
+                        print(f"{Colors.FAIL} File content exceeds safety limit.{Colors.ENDC}")
                         continue
-                    user_input = f"FILE CONTENT ({fname}):\n{content}\n\nTask: analyze or continue working with this file."
+                    user_input = f"FILE CONTENT ({fname}):\n{content}\n"
                 else:
-                    print(f"{Colors.FAIL}❌ File not found.{Colors.ENDC}")
+                    print(f"{Colors.FAIL} File not found.{Colors.ENDC}")
                     continue
 
             session.append({"role": "user", "content": user_input})
 
+            if not user_input:
+                continue
+
             full_res = ""
-            with Spinner(f"{MODEL_ID} is processing..."):
-                response = client.chat.completions.create(
-                    model=MODEL_ID,
-                    messages=session,
-                    temperature=0.0,
-                    stream=True
-                )
-                for chunk in response:
-                    if chunk.choices[0].delta.content:
-                        full_res += chunk.choices[0].delta.content
+            if parse:
+                with Spinner(f"{MODEL_ID} is processing..."):
+                    response = client.chat.completions.create(
+                        model=MODEL_ID,
+                        messages=session,
+                        temperature=0.0,
+                        stream=True
+                    )
+                    for chunk in response:
+                        if chunk.choices[0].delta.content:
+                            full_res += chunk.choices[0].delta.content
+
+                print(f"\n{full_res}")
 
             if full_res:
-                print(f"\n{full_res}")
-                action_taken = parse_and_execute(full_res)
+                if parse:
+                    action_taken = parse_and_execute(full_res) 
                 session.append({"role": "assistant", "content": full_res})
 
-                #print(f"\n{Colors.OKCYAN}🔍 Current directory:{Colors.ENDC}\n{list_files()}")
+                #print(f"\n{Colors.OKCYAN} Current directory:{Colors.ENDC}\n{list_files()}")
 
         except KeyboardInterrupt:
             print(f"\n\n{Colors.FAIL}[INTERRUPTED]{Colors.ENDC}")
