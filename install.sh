@@ -1,29 +1,51 @@
 #!/bin/bash
 
-# Descobrir o caminho absoluto de onde este repo do agent_simoes foi clonado
+# Absolute Paths
 REPO_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 VENV_PATH="$REPO_DIR/venv/bin/activate"
-AGENT_PY="$REPO_DIR/agent.py"
+AGENT_PY="$REPO_DIR/agent_simoes.py"
 BIN_DIR="$HOME/.local/bin"
-TARGET_SCRIPT="$BIN_DIR/agent"
+TARGET_SCRIPT="$BIN_DIR/agent_simoes"
 
-# Criar pasta bin caso não exista
+# Create bin directory if it doesn't exist
 mkdir -p "$BIN_DIR"
 
-echo "Instalando agente a partir de: $REPO_DIR"
+echo "Installing agent from: $REPO_DIR"
 
-# Criar o conteúdo do script wrapper
+# Create the wrapper content (Use /bin/sh for maximum compatibility)
 cat << EOF > "$TARGET_SCRIPT"
-#!/bin/bash
-# Ativar o ambiente virtual
-source "$VENV_PATH"
-# Executar o python passando o caminho absoluto do script, 
-# mas o diretório de trabalho será o atual do terminal
-python3 "$AGENT_PY" "\$@"
+#!/bin/sh
+# Activate the virtual environment and run the script
+. "$VENV_PATH"
+exec python3 "$AGENT_PY" "\$@"
 EOF
 
-# Dar permissão de execução
 chmod +x "$TARGET_SCRIPT"
 
-echo "Sucesso! Agora pode usar o comando 'agent' em qualquer pasta."
-echo "Certifique-se de que $BIN_DIR está no seu PATH."
+# Add to PATH automatically
+# Detects which shell the user is using
+CURRENT_SHELL=$(basename "$SHELL")
+SHELL_RC=""
+
+case "$CURRENT_SHELL" in
+    zsh)  SHELL_RC="$HOME/.zshrc" ;;
+    bash) SHELL_RC="$HOME/.bashrc" ;;
+    *)    SHELL_RC="$HOME/.profile" ;; # Fallback for other shells
+esac
+
+# Check if BIN_DIR is already in the system PATH
+if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
+    echo "Adicionando $BIN_DIR ao PATH em $SHELL_RC"
+    
+    # Append the export to the end of the shell config file
+    echo "" >> "$SHELL_RC"
+    echo "# Agent Simoes Path" >> "$SHELL_RC"
+    echo "export PATH=\"\$PATH:$BIN_DIR\"" >> "$SHELL_RC"
+    
+    echo "---"
+    echo "IMPORTANT: Run 'source $SHELL_RC' or restart the terminal."
+else
+    echo "$BIN_DIR is already in your PATH."
+fi
+
+echo "Success! The 'agent' command is ready to use."
