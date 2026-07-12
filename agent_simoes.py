@@ -26,10 +26,11 @@ class Colors:
 
 # Run llama server before running this script.
 # Example:
-# llama-server --model qwen2.5-coder-7b-instruct.gguf --alias "Qwen" --threads 8 --ctx-size 32768 --port 8001 --n-gpu-layers 30 --temp 0.7 --top-k 50 --top-p 1 -ngl 10 --jinja
+# llama-server  --model /solid2/developer/llm-models/gemma-4-E4B-it-UD-Q4_K_XL.gguf  --temp 1.0  --top-p 0.95  --top-k 64  --alias "unsloth/gemma-4-E4B-it-UD-Q4_K_XL.gguf" --port 8001 --chat-template-kwargs '{"enable_thinking":false}'
+
 
 # --- SETTINGS ---
-DEFAULT_MODEL_NAME = "Qwen-7B-Coder"
+DEFAULT_MODEL_NAME = "gemma-4-E4B-it-UD-Q4_K_XL"
 BASE_URL = "http://127.0.0.1:8001/v1"
 MAX_CHARS = 60000  # Safety limit for context size
 
