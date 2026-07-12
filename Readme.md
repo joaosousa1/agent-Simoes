@@ -62,7 +62,7 @@ The agent expects llama-server to be running independently:
 
 ```bash
 llama-server \
-    --model /solid2/developer/llm-models/gemma-4-E4B-it-UD-Q4_K_XL.gguf \
+    --model gemma-4-E4B-it-UD-Q4_K_XL.gguf \
     --temp 1.0 \
     --top-p 0.95 \
     --top-k 64 \
