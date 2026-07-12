@@ -45,7 +45,7 @@ By naming this after him, I’m leaning into that same "tough-but-clumsy" energy
 ## Requirements:
 
 - llama-server
-- 
+- gemma-4-E4B-it-UD-Q4_K_XL
 
 ## Installation
 ```bash
